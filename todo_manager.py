@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # Try to get a todo by ID
     print("\nGetting details of one Todo:")
     try:
-        todo = get_todo_details("3") # You can change this ID
+        todo = get_todo_details("")  # You can change this ID
         print(todo)
     except Exception as e:
         print(e)
@@ -86,14 +86,32 @@ def update_todo(todo_id, todo):
     save_list(todos)
     logging.info(f"Todo with ID {todo_id} updated successfully.")
 
+import uuid
+
+def generate_id():
+    return uuid.uuid4().hex
+
+def add_todo(title, description, done_status=False):
+    todos = load_list()
+    new_todo = {
+        "title": title,
+        "description": description,
+        "doneStatus": done_status,
+        "id": generate_id()
+    }
+    todos.append(new_todo)
+    save_list(todos)
+    print("New todo added successfully!")
+
 def menu():
     while True:
         print("\nTodo Management Menu:")
         print("1. View All Todos")
         print("2. Get Todo Details")
-        print("3. Remove a Todo")
-        print("4. Update a Todo")
-        print("5. Exit")
+        print("3. Add a todo")
+        print("4. Remove a Todo")
+        print("5. Update a Todo")
+        print("6. Exit")
 
         choice = input("Enter your choice (1-5): ")
 
@@ -111,8 +129,14 @@ def menu():
                 print(todo)
             except Exception as e:
                 print(e)
-
         elif choice == "3":
+            title = input("Title: ")
+            desc = input("Description: ")
+            status_input = input("Done? (true/false): ").lower()
+            status = status_input == "true"
+            add_todo(title, desc, status)     
+
+        elif choice == "4":
             todo_id = input("Enter Todo ID to remove: ")
             try:
                 remove_todo(todo_id)
@@ -120,7 +144,7 @@ def menu():
             except Exception as e:
                 print(e)
 
-        elif choice == "4":
+        elif choice == "5":
             todo_id = input("Enter Todo ID to update: ")
             print("Enter new values (leave blank to skip):")
             title = input("Title: ")
@@ -141,7 +165,7 @@ def menu():
             except Exception as e:
                 print(e)
 
-        elif choice == "5":
+        elif choice == "6":
             print("Exiting... 👋")
             break
         else:
