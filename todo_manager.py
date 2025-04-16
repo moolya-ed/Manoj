@@ -15,7 +15,7 @@ def load_list():
             todos = json.load(file)
             return todos
     except Exception as e:
-        logging.error(f"Error reading the todo file: {e}")
+        logging.error(f"Errorsreading the todo file: {e}")
         return []
 
 # Get details of a specific todo
@@ -37,7 +37,124 @@ if __name__ == "__main__":
     # Try to get a todo by ID
     print("\nGetting details of one Todo:")
     try:
-        todo = get_todo_details("8af52e54045b423aabaa9bcf7003ff4d")  # You can change this ID
+        todo = get_todo_details("3") # You can change this ID
         print(todo)
     except Exception as e:
         print(e)
+
+
+def save_list(todo_list):
+    file_path = "data/todos.json"
+
+    try:
+        with open(file_path, 'w') as file:
+            json.dump(todo_list, file, indent=4)
+            logging.info("Todos saved successfully.")
+    except Exception as e:
+        logging.error(f"Error saving the todo list: {e}")
+
+
+def remove_todo(todo_id):
+    todos = load_list()
+    original_length = len(todos)
+
+    # Filter out the todo with the matching ID
+    updated_todos = [todo for todo in todos if todo.get("id") != todo_id]
+
+    if len(updated_todos) == original_length:
+        # No item was removed, which means the ID was not found
+        raise Exception(f"404 Not Found: Todo with ID {todo_id} not found.")
+
+    # Save the updated list
+    save_list(updated_todos)
+    logging.info(f"Todo with ID {todo_id} removed successfully.")
+
+
+def update_todo(todo_id, todo):
+    todos = load_list()
+    todo_found = False
+
+    for t in todos:
+        if t.get("id") == todo_id:
+            t.update(todo)  # Only update fields provided in the input
+            todo_found = True
+            break
+
+    if not todo_found:
+        raise Exception(f"404 Not Found: Todo with ID {todo_id} not found.")
+
+    save_list(todos)
+    logging.info(f"Todo with ID {todo_id} updated successfully.")
+
+def menu():
+    while True:
+        print("\nTodo Management Menu:")
+        print("1. View All Todos")
+        print("2. Get Todo Details")
+        print("3. Remove a Todo")
+        print("4. Update a Todo")
+        print("5. Exit")
+
+        choice = input("Enter your choice (1-5): ")
+
+        if choice == "1":
+            todos = load_list()
+            print("\nAll Todos:")
+            for t in todos:
+                print(f"- {t['title']} (ID: {t['id']})")
+
+        elif choice == "2":
+            todo_id = input("Enter Todo ID: ")
+            try:
+                todo = get_todo_details(todo_id)
+                print(f"\nDetails of Todo ID {todo_id}:")
+                print(todo)
+            except Exception as e:
+                print(e)
+
+        elif choice == "3":
+            todo_id = input("Enter Todo ID to remove: ")
+            try:
+                remove_todo(todo_id)
+                print("Todo removed successfully.")
+            except Exception as e:
+                print(e)
+
+        elif choice == "4":
+            todo_id = input("Enter Todo ID to update: ")
+            print("Enter new values (leave blank to skip):")
+            title = input("Title: ")
+            description = input("Description: ")
+            done_status_input = input("Done? (true/false): ")
+
+            todo = {}
+            if title:
+                todo["title"] = title
+            if description:
+                todo["description"] = description
+            if done_status_input.lower() in ["true", "false"]:
+                todo["doneStatus"] = done_status_input.lower() == "true"
+
+            try:
+                update_todo(todo_id, todo)
+                print("Todo updated successfully.")
+            except Exception as e:
+                print(e)
+
+        elif choice == "5":
+            print("Exiting... 👋")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+# -----------------------------
+# Entry Point
+# -----------------------------
+if __name__ == "__main__":
+    menu()
+
+
+
+
+
+
