@@ -39,3 +39,18 @@ cd simple-todo-manager
 
 python main.py
 
+**Data Storage**
+All todo items are saved inside a JSON file: data/todos.json
+
+Each todo is stored as an object with:
+
+id: A unique UUID generated for every task.
+
+title: The task’s title.
+
+description: A short detail about the task.
+
+doneStatus: A boolean (true or false) indicating whether the task is completed.
+
+
+
