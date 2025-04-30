@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Todo App</title>
+    <link rel="stylesheet" href="/frontend/style.css">
+</head>
+<body>
+    <header>
+        <h1>TODO APP</h1>
+        <nav>
+            <a href="#" onclick="showForm('create')">Create Todo</a>
+            <a href="#" onclick="showForm('view')">View Todo</a>
+            <a href="#" onclick="showForm('update')">Update Todo</a>
+            <a href="#" onclick="showForm('delete')">Delete Todo</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- Forms: Create, View, Update, Delete -->
+        <div id="create-form" class="form-container" style="display:none;">
+            <h2>Create a New Todo</h2>
+            <form id="create-todo-form">
+                <label for="create-title">Title:</label>
+                <input type="text" id="create-title" required><br><br>
+                <label for="create-description">Description:</label>
+                <textarea id="create-description" required></textarea><br><br>
+                <label for="create-doneStatus">Done Status:</label>
+                <input type="checkbox" id="create-doneStatus"><br><br>
+                <button type="submit">Create Todo</button>
+            </form>
+            <p id="create-message" class="message"></p>
+        </div>
+
+        <div id="view-form" class="form-container" style="display:none;">
+            <h2>View Todos</h2>
+            <form id="view-todo-form">
+                <label for="view-id">Todo ID (optional):</label>
+                <input type="text" id="view-id"><br><br>
+                <button type="submit">View Todo</button>
+            </form>
+            <div id="todos-list"></div>
+            <div id="pagination-controls" class="pagination"></div>
+        </div>
+
+        <div id="update-form" class="form-container" style="display:none;">
+            <h2>Update Todo</h2>
+            <form id="update-todo-form">
+                <label for="update-id">Todo ID:</label>
+                <input type="text" id="update-id" required><br><br>
+                <label for="update-title">Title:</label>
+                <input type="text" id="update-title"><br><br>
+                <label for="update-description">Description:</label>
+                <textarea id="update-description"></textarea><br><br>
+                <label for="update-doneStatus">Done Status:</label>
+                <input type="checkbox" id="update-doneStatus"><br><br>
+                <button type="submit">Update Todo</button>
+            </form>
+            <p id="update-message" class="message"></p>
+        </div>
+
+        <div id="delete-form" class="form-container" style="display:none;">
+            <h2>Delete Todo</h2>
+            <form id="delete-todo-form">
+                <label for="delete-id">Todo ID:</label>
+                <input type="text" id="delete-id" required><br><br>
+                <button type="submit">Delete Todo</button>
+            </form>
+            <p id="delete-message" class="message"></p>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://127.0.0.1:8000/todos';
+let currentPage = 1;
+const todosPerPage = 5;
+
+function showForm(formId) {
+    document.querySelectorAll('.form-container').forEach(form => {
+        form.style.display = 'none';
+    });
+    document.getElementById(`${formId}-form`).style.display = 'block';
+}
+
+function fetchTodos(page = 1) {
+    fetch(`${apiUrl}?page=${page}&limit=${todosPerPage}`)
+        .then(response => response.json())
+        .then(data => {
+            const todosList = document.getElementById("todos-list");
+            todosList.innerHTML = '';
+            if (data.todos.length === 0) {
+                todosList.innerHTML = '<p>No todos available.</p>';
+            } else {
+                data.todos.forEach(todo => {
+                    todosList.innerHTML += `
+                        <div class="todo">
+                            <p><strong>ID:</strong> ${todo.id}</p>
+                            <p><strong>Title:</strong> ${todo.title}</p>
+                            <p><strong>Description:</strong> ${todo.description}</p>
+                            <p><strong>Done:</strong> ${todo.doneStatus ? "Yes" : "No"}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            const pagination = document.getElementById("pagination-controls");
+            pagination.innerHTML = `
+                <button onclick="fetchTodos(${page - 1})" ${page <= 1 ? 'disabled' : ''}>Previous</button>
+                <span>Page ${page}</span>
+                <button onclick="fetchTodos(${page + 1})" ${data.todos.length < todosPerPage ? 'disabled' : ''}>Next</button>
+            `;
+        })
+        .catch(error => console.error("Error:", error));
+}
+
+document.getElementById("view-todo-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const id = Number(document.getElementById("view-id").value.trim());
+    const list = document.getElementById("todos-list");
+    list.innerHTML = '';
+
+    if (id) {
+        fetch(`${apiUrl}/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Not found");
+                return res.json();
+            })
+            .then(todo => {
+                list.innerHTML = `
+                    <div class="todo">
+                        <p><strong>ID:</strong> ${todo.id}</p>
+                        <p><strong>Title:</strong> ${todo.title}</p>
+                        <p><strong>Description:</strong> ${todo.description}</p>
+                        <p><strong>Done:</strong> ${todo.doneStatus ? "Yes" : "No"}</p>
+                    </div>
+                `;
+            })
+            .catch(() => {
+                list.innerHTML = '<p>No todo found with the given ID.</p>';
+            });
+    } else {
+        fetchTodos(currentPage);
+    }
+});
+
+document.getElementById("create-todo-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const title = document.getElementById("create-title").value;
+    const description = document.getElementById("create-description").value;
+    const doneStatus = document.getElementById("create-doneStatus").checked;
+
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description, doneStatus })
+    })
+        .then(res => res.json())
+        .then(() => {
+            document.getElementById("create-message").innerText = "Todo created successfully!";
+            fetchTodos(currentPage);
+            this.reset();
+        })
+        .catch(() => {
+            document.getElementById("create-message").innerText = "Error creating todo.";
+        });
+});
+
+fetchTodos(currentPage);
+
+    </script>
+</body>
+</html>
